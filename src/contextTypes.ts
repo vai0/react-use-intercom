@@ -119,6 +119,10 @@ export type IntercomContextValues = {
    * ```
    */
   trackEvent: (event: string, metaData?: object) => void;
+  /**
+   * Returns the current boot state
+   */
+  useBooted: (state:  [boolean, React.Dispatch<React.SetStateAction<boolean>>]) => boolean;
 };
 
 export type IntercomProviderProps = {

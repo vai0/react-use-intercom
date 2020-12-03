@@ -2,7 +2,6 @@ import * as React from 'react';
 import styled from 'styled-components';
 
 import { IntercomProvider, useIntercom } from '../../../.';
-
 import { Button } from '../common';
 
 const Grid = styled.div`
@@ -35,12 +34,15 @@ const RawUseIntercomPage = () => {
     showNewMessages,
     getVisitorId,
     trackEvent,
+    useBooted,
   } = useIntercom();
   const handleBoot = React.useCallback(() => boot(), [boot]);
 
   const handleSeededBoot = React.useCallback(() => boot({ name: 'Russo' }), [
     boot,
   ]);
+
+  const isBooted = useBooted(React.useState(false));
 
   const handleExtendedSeededBoot = React.useCallback(
     () =>
@@ -252,7 +254,9 @@ const RawUseIntercomPage = () => {
           onClick={handleTrackEventWithMetaData}
         />
       </Item>
-
+      <Item>
+        <p>Is booted: {isBooted ? '✅' : '⛔'}</p>
+      </Item>
       {visitorId && <p data-cy="visitorIdValue">{visitorId}</p>}
     </Grid>
   );

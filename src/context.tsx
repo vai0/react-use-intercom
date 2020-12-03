@@ -21,6 +21,10 @@ const IntercomContext = React.createContext<IntercomContextValues>({
   },
   startTour: () => logger.log('error', NO_INTERCOM_PROVIDER_MESSAGE),
   trackEvent: () => logger.log('error', NO_INTERCOM_PROVIDER_MESSAGE),
+  useBooted: () => {
+    logger.log('error', NO_INTERCOM_PROVIDER_MESSAGE);
+    return false;
+  },
 });
 
 export default IntercomContext;
