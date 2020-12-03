@@ -80,33 +80,48 @@ export const IntercomProvider = ({
     [],
   );
 
-  const boot = React.useCallback((props?: IntercomProps) => {
-    if (!window.Intercom && !memoizedShouldInitialize.current) {
-      logger.log(
-        'warn',
-        'Intercom instance is not initialized because `shouldInitialize` is set to `false` in `IntercomProvider`',
-      );
-      return;
+  const isBootedHanldler = React.useRef<
+    React.Dispatch<React.SetStateAction<boolean>>
+  >();
+
+  const handleInternalIsBooted = React.useCallback(() => {
+    if (isBootedHanldler.current) {
+      isBootedHanldler.current(isBooted.current);
     }
-    if (isBooted.current) return;
-
-    const metaData: RawIntercomBootProps = {
-      app_id: memoizedAppId.current,
-      ...(memoizedApiBase.current && { api_base: memoizedApiBase.current }),
-      ...(props && mapIntercomPropsToRawIntercomProps(props)),
-    };
-
-    window.intercomSettings = metaData;
-    IntercomAPI('boot', metaData);
-    isBooted.current = true;
   }, []);
+
+  const boot = React.useCallback(
+    (props?: IntercomProps) => {
+      if (!window.Intercom && !memoizedShouldInitialize.current) {
+        logger.log(
+          'warn',
+          'Intercom instance is not initialized because `shouldInitialize` is set to `false` in `IntercomProvider`',
+        );
+        return;
+      }
+      if (isBooted.current) return;
+
+      const metaData: RawIntercomBootProps = {
+        app_id: memoizedAppId.current,
+        ...(memoizedApiBase.current && { api_base: memoizedApiBase.current }),
+        ...(props && mapIntercomPropsToRawIntercomProps(props)),
+      };
+
+      window.intercomSettings = metaData;
+      IntercomAPI('boot', metaData);
+      isBooted.current = true;
+      handleInternalIsBooted();
+    },
+    [handleInternalIsBooted],
+  );
 
   const shutdown = React.useCallback(() => {
     if (!isBooted.current) return;
 
     IntercomAPI('shutdown');
     isBooted.current = false;
-  }, []);
+    handleInternalIsBooted();
+  }, [handleInternalIsBooted]);
 
   const hardShutdown = React.useCallback(() => {
     if (!isBooted.current) return;
@@ -115,7 +130,8 @@ export const IntercomProvider = ({
     delete window.Intercom;
     delete window.intercomSettings;
     isBooted.current = false;
-  }, []);
+    handleInternalIsBooted();
+  }, [handleInternalIsBooted]);
 
   const refresh = React.useCallback(() => {
     ensureIntercom('update', () => {
@@ -196,6 +212,13 @@ export const IntercomProvider = ({
     [ensureIntercom],
   );
 
+  const handleBootHandler = React.useCallback(
+    (setState: React.Dispatch<React.SetStateAction<boolean>>) => {
+      isBootedHanldler.current = setState;
+    },
+    [],
+  );
+
   const providerValue = React.useMemo<IntercomContextValues>(() => {
     return {
       boot,
@@ -209,6 +232,7 @@ export const IntercomProvider = ({
       getVisitorId,
       startTour,
       trackEvent,
+      handleIsBooted: handleBootHandler,
     };
   }, [
     boot,
@@ -222,6 +246,7 @@ export const IntercomProvider = ({
     getVisitorId,
     startTour,
     trackEvent,
+    handleBootHandler,
   ]);
 
   const content = React.useMemo(() => children, [children]);
