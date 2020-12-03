@@ -122,7 +122,9 @@ export type IntercomContextValues = {
   /**
    * Returns the current boot state
    */
-  useBooted: (state:  [boolean, React.Dispatch<React.SetStateAction<boolean>>]) => boolean;
+  useBooted: (
+    state: [boolean, React.Dispatch<React.SetStateAction<boolean>>],
+  ) => boolean;
 };
 
 export type IntercomProviderProps = {

@@ -84,8 +84,6 @@ export const IntercomProvider = ({
     [],
   );
 
-
-
   const handleInternalIsBooted = React.useCallback(() => {
     if (isBootedHandler.current) {
       isBootedHandler.current(isBooted.current);
@@ -123,7 +121,7 @@ export const IntercomProvider = ({
     IntercomAPI('shutdown');
     isBooted.current = false;
     handleInternalIsBooted();
-  }, []);
+  }, [handleInternalIsBooted]);
 
   const hardShutdown = React.useCallback(() => {
     if (!isBooted.current) return;
@@ -133,7 +131,7 @@ export const IntercomProvider = ({
     delete window.intercomSettings;
     isBooted.current = false;
     handleInternalIsBooted();
-  }, []);
+  }, [handleInternalIsBooted]);
 
   const refresh = React.useCallback(() => {
     ensureIntercom('update', () => {
@@ -214,14 +212,15 @@ export const IntercomProvider = ({
     [ensureIntercom],
   );
 
-
   const useBooted = React.useCallback(
-    (state:  [boolean, React.Dispatch<React.SetStateAction<boolean>>])=> {
+    (state: [boolean, React.Dispatch<React.SetStateAction<boolean>>]) => {
       const [, setter] = state;
       isBootedHandler.current = setter;
 
       return isBooted.current;
-    }, []);
+    },
+    [],
+  );
 
   const providerValue = React.useMemo<IntercomContextValues>(() => {
     return {
@@ -250,6 +249,7 @@ export const IntercomProvider = ({
     getVisitorId,
     startTour,
     trackEvent,
+    useBooted,
   ]);
 
   const content = React.useMemo(() => children, [children]);
