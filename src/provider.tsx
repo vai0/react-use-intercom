@@ -9,8 +9,9 @@ import {
   IntercomContextValues,
   IntercomProps,
   IntercomProviderProps,
-  RawIntercomBootProps,
+  RawIntercomProps,
 } from './types';
+import { useInterval } from './useInterval';
 import { isEmptyObject, isSSR } from './utils';
 
 export const IntercomProvider: React.FC<IntercomProviderProps> = ({
@@ -20,12 +21,17 @@ export const IntercomProvider: React.FC<IntercomProviderProps> = ({
   onHide,
   onShow,
   onUnreadCountChange,
+  onInitialize,
+  onBoot,
   shouldInitialize = !isSSR,
   apiBase,
   initializeDelay,
+  externalIntercom,
+  externalIntercomFallback = true,
+  externalIntercomFallbackDelay = 30000,
   ...rest
 }) => {
-  const isBooted = React.useRef(autoBoot);
+  const isBooted = React.useRef(false);
 
   if (!isEmptyObject(rest) && __DEV__)
     logger.log(
@@ -36,24 +42,104 @@ export const IntercomProvider: React.FC<IntercomProviderProps> = ({
       ].join(''),
     );
 
-  if (!isSSR && !window.Intercom && shouldInitialize) {
+  const getIntercomSettings = React.useCallback(
+    (metaData?: RawIntercomProps) => {
+      const commonSettings = {
+        app_id: appId,
+        ...(apiBase && { api_base: apiBase }),
+        ...metaData,
+      };
+
+      let settings;
+      if (externalIntercom) {
+        settings = {
+          ...window.intercomSettings,
+          ...commonSettings,
+        };
+      } else {
+        settings = commonSettings;
+      }
+
+      return settings;
+    },
+    [apiBase, appId, externalIntercom],
+  );
+
+  const boot = React.useCallback(
+    (props?: IntercomProps) => {
+      if (!window.Intercom && !shouldInitialize) {
+        logger.log(
+          'warn',
+          [
+            'Intercom instance is not initialized because `shouldInitialize` is set to `false` in `IntercomProvider, `',
+            'or because `externalIntercom` is set to `true` in `IntercomProvider`, ',
+            'and the external Intercom instance has not been initialized yet. ',
+            `Please call 'boot' after the external instance has been initialized or `,
+            `set 'autoBoot' to true in IntercomProvider.`,
+          ].join(''),
+        );
+        return;
+      }
+      if (isBooted.current) return;
+
+      let intercomProps;
+      if (props) {
+        intercomProps = mapIntercomPropsToRawIntercomProps(props);
+      }
+
+      const intercomSettings = getIntercomSettings(intercomProps);
+
+      window.intercomSettings = intercomSettings;
+      IntercomAPI('boot', intercomSettings);
+      isBooted.current = true;
+
+      if (onBoot) onBoot();
+    },
+    [shouldInitialize, getIntercomSettings, onBoot],
+  );
+
+  const initializeAndAttachListeners = () => {
     initialize(appId, initializeDelay);
+    if (onInitialize) onInitialize();
+
     // Only add listeners on initialization
     if (onHide) IntercomAPI('onHide', onHide);
     if (onShow) IntercomAPI('onShow', onShow);
     if (onUnreadCountChange)
       IntercomAPI('onUnreadCountChange', onUnreadCountChange);
 
-    if (autoBoot) {
-      IntercomAPI('boot', {
-        app_id: appId,
-        ...(apiBase && { api_base: apiBase }),
-      });
-      window.intercomSettings = {
-        app_id: appId,
-        ...(apiBase && { api_base: apiBase }),
-      };
-    }
+    if (autoBoot) boot();
+  };
+
+  // Ping for the external Intercom instance to avoid race condition where this
+  // component executes before the external instance has loaded
+  const [ping, setPing] = React.useState(true);
+  const start = React.useRef(Date.now());
+
+  const shouldPing = ping && externalIntercom;
+
+  useInterval(
+    () => {
+      if (!isSSR && shouldInitialize && externalIntercom) {
+        if (typeof window.Intercom === 'function') {
+          initializeAndAttachListeners();
+          setPing(false);
+        } else {
+          if (
+            externalIntercomFallback &&
+            Date.now() - start.current > externalIntercomFallbackDelay
+          ) {
+            initializeAndAttachListeners();
+            setPing(false);
+          }
+        }
+      }
+    },
+    shouldPing ? null : 1000,
+  );
+
+  if (!isSSR && shouldInitialize && !externalIntercom && !window.Intercom) {
+    initializeAndAttachListeners();
   }
 
   const ensureIntercom = React.useCallback(
@@ -82,30 +168,6 @@ export const IntercomProvider: React.FC<IntercomProviderProps> = ({
       return callback();
     },
     [shouldInitialize],
-  );
-
-  const boot = React.useCallback(
-    (props?: IntercomProps) => {
-      if (!window.Intercom && !shouldInitialize) {
-        logger.log(
-          'warn',
-          'Intercom instance is not initialized because `shouldInitialize` is set to `false` in `IntercomProvider`',
-        );
-        return;
-      }
-      if (isBooted.current) return;
-
-      const metaData: RawIntercomBootProps = {
-        app_id: appId,
-        ...(apiBase && { api_base: apiBase }),
-        ...(props && mapIntercomPropsToRawIntercomProps(props)),
-      };
-
-      window.intercomSettings = metaData;
-      IntercomAPI('boot', metaData);
-      isBooted.current = true;
-    },
-    [apiBase, appId, shouldInitialize],
   );
 
   const shutdown = React.useCallback(() => {
@@ -240,4 +302,5 @@ export const IntercomProvider: React.FC<IntercomProviderProps> = ({
   );
 };
 
+// TODO: throw error if hook is used outside of the provider
 export const useIntercomContext = () => React.useContext(IntercomContext);

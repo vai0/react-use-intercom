@@ -411,7 +411,6 @@ export type IntercomProviderProps = {
    * @remarks can be used for multistaged environments
    */
   shouldInitialize?: boolean;
-
   /**
    * If you need to route your Messenger requests through a different endpoint than the default
    *
@@ -425,4 +424,50 @@ export type IntercomProviderProps = {
    * @remarks If not set delay is set to 0ms
    * */
   initializeDelay?: number;
+  /**
+   * If you want this library to find and hook onto an existing Intercom
+   * instance
+   *
+   *
+   * @remarks This is useful when you require Intercom to be initialized by
+   * another platform such as Segment, yet you still want the convenience of
+   * controlling that instance via hooks
+   */
+  externalIntercom?: boolean;
+  /**
+   * If the external intercom instance is not found, initialize an instance of
+   * Intercom
+   *
+   * @remarks If not set externalIntercomFallback is set to true. This is useful
+   * if the platform you depend on that loads Intercom is failing to initialize
+   * Intercom, usually because the platform is adblocked
+   */
+  externalIntercomFallback?: boolean;
+  /**
+   * Indicates the amount of time, in milliseconds we'll continue looking for an
+   * external Intercom instance before initializing an instance of Intercom
+   *
+   * @remarks If not set delay is set to 30s
+   */
+  externalIntercomFallbackDelay?: number;
+
+  /**
+   * When Intercom is initialized, you can hook into this event. This requires a
+   * function argument.
+   *
+   * @remarks Note the Intercom Javascript API does not provide an onInitialize
+   * hook, though this is useful if you've passed the prop externalIntercom =
+   * true and you need to know when that external instance has initialized.
+   */
+  onInitialize?: () => void;
+
+  /**
+   * When Intercom is booted, you can hook into this event. This requires a
+   * function argument.
+   *
+   * @remarks Note the Intercom Javascript API does not provide an onBoot hook,
+   * though this is useful if you've passed the prop externalIntercom = true and
+   * you need to know when that external instance has booted.
+   */
+  onBoot?: () => void;
 };
