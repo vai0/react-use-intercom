@@ -26,6 +26,7 @@ export const IntercomProvider: React.FC<IntercomProviderProps> = ({
   ...rest
 }) => {
   const isBooted = React.useRef(autoBoot);
+  const isListenersAttached = React.useRef(false);
 
   if (!isEmptyObject(rest) && __DEV__)
     logger.log(
@@ -36,37 +37,32 @@ export const IntercomProvider: React.FC<IntercomProviderProps> = ({
       ].join(''),
     );
 
-  React.useEffect(() => {
-    if (!isSSR && shouldInitialize) {
-      console.log('initializing...');
-      initialize(appId, initializeDelay);
-      // Only add listeners on initialization
+  const attachListeners = () => {
+    if (!isListenersAttached.current) {
       if (onHide) IntercomAPI('onHide', onHide);
       if (onShow) IntercomAPI('onShow', onShow);
       if (onUnreadCountChange)
         IntercomAPI('onUnreadCountChange', onUnreadCountChange);
 
-      if (autoBoot) {
-        IntercomAPI('boot', {
-          app_id: appId,
-          ...(apiBase && { api_base: apiBase }),
-        });
-        window.intercomSettings = {
-          app_id: appId,
-          ...(apiBase && { api_base: apiBase }),
-        };
-      }
+      isListenersAttached.current = true;
     }
-  }, [
-    shouldInitialize,
-    appId,
-    initializeDelay,
-    onHide,
-    onShow,
-    onUnreadCountChange,
-    autoBoot,
-    apiBase,
-  ]);
+  };
+
+  if (!isSSR && shouldInitialize) {
+    initialize(appId, initializeDelay);
+    attachListeners();
+
+    if (autoBoot) {
+      IntercomAPI('boot', {
+        app_id: appId,
+        ...(apiBase && { api_base: apiBase }),
+      });
+      window.intercomSettings = {
+        app_id: appId,
+        ...(apiBase && { api_base: apiBase }),
+      };
+    }
+  }
 
   const ensureIntercom = React.useCallback(
     (
