@@ -1,19 +1,19 @@
 {
-  "name": "react-use-intercom",
-  "author": "devrnt",
+  "name": "@vai0s-org/react-use-intercom",
+  "author": "vai0",
   "module": "dist/react-use-intercom.esm.js",
   "description": "React Intercom integration without the hassle, driven by hooks.",
-  "homepage": "https://github.com/devrnt/react-use-intercom#readme",
+  "homepage": "https://github.com/vai0/react-use-intercom#readme",
   "version": "1.2.0",
   "license": "MIT",
   "main": "dist/index.js",
   "typings": "dist/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "https://github.com/devrnt/react-use-intercom"
+    "url": "https://github.com/vai0/react-use-intercom"
   },
   "bugs": {
-    "url": "https://github.com/devrnt/react-use-intercom/issues"
+    "url": "https://github.com/vai0/react-use-intercom/issues"
   },
   "files": [
     "dist",
@@ -74,6 +74,7 @@
     }
   ],
   "publishConfig": {
+    "access": "public",
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
