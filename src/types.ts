@@ -425,4 +425,11 @@ export type IntercomProviderProps = {
    * @remarks If not set delay is set to 0ms
    * */
   initializeDelay?: number;
+
+  // TODO: rm?
+  // useExternalInstance?: boolean;
+  /**
+   * Run the Intercom initialize script even if an instance of Intercom already
+   * exists globally.
+   */
 };
