@@ -36,25 +36,36 @@ export const IntercomProvider: React.FC<IntercomProviderProps> = ({
       ].join(''),
     );
 
-  if (!isSSR && !window.Intercom && shouldInitialize) {
-    initialize(appId, initializeDelay);
-    // Only add listeners on initialization
-    if (onHide) IntercomAPI('onHide', onHide);
-    if (onShow) IntercomAPI('onShow', onShow);
-    if (onUnreadCountChange)
-      IntercomAPI('onUnreadCountChange', onUnreadCountChange);
+  React.useEffect(() => {
+    if (!isSSR && shouldInitialize) {
+      initialize(appId, initializeDelay);
+      // Only add listeners on initialization
+      if (onHide) IntercomAPI('onHide', onHide);
+      if (onShow) IntercomAPI('onShow', onShow);
+      if (onUnreadCountChange)
+        IntercomAPI('onUnreadCountChange', onUnreadCountChange);
 
-    if (autoBoot) {
-      IntercomAPI('boot', {
-        app_id: appId,
-        ...(apiBase && { api_base: apiBase }),
-      });
-      window.intercomSettings = {
-        app_id: appId,
-        ...(apiBase && { api_base: apiBase }),
-      };
+      if (autoBoot) {
+        IntercomAPI('boot', {
+          app_id: appId,
+          ...(apiBase && { api_base: apiBase }),
+        });
+        window.intercomSettings = {
+          app_id: appId,
+          ...(apiBase && { api_base: apiBase }),
+        };
+      }
     }
-  }
+  }, [
+    shouldInitialize,
+    appId,
+    initializeDelay,
+    onHide,
+    onShow,
+    onUnreadCountChange,
+    autoBoot,
+    apiBase,
+  ]);
 
   const ensureIntercom = React.useCallback(
     (
