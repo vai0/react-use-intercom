@@ -38,6 +38,7 @@ export const IntercomProvider: React.FC<IntercomProviderProps> = ({
 
   React.useEffect(() => {
     if (!isSSR && shouldInitialize) {
+      console.log('initializing...');
       initialize(appId, initializeDelay);
       // Only add listeners on initialization
       if (onHide) IntercomAPI('onHide', onHide);
